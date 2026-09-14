@@ -44,3 +44,30 @@ jobs:
 
       - name: Run test suite
         run: make test
+
+  validate-remotion-shorts:
+    name: Validate Remotion Shorts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: remotion-composer/package-lock.json
+
+      - name: Install Remotion dependencies
+        working-directory: remotion-composer
+        run: npm ci
+
+      - name: Run Shorts regression tests
+        working-directory: remotion-composer
+        run: npm run test:shorts
+
+      - name: Type-check Remotion compositions
+        working-directory: remotion-composer
+        run: npm run typecheck:shorts

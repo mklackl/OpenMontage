@@ -183,6 +183,14 @@ class VideoCompose(BaseTool):
                     "Applied in render and encode operations."
                 ),
             },
+            "composition_id": {
+                "type": "string",
+                "description": (
+                    "Optional registered Remotion composition ID for the "
+                    "remotion_render operation (for example CamelotMoodShort). "
+                    "When omitted, renderer_family routing remains unchanged."
+                ),
+            },
             "options": {
                 "type": "object",
                 "description": "Render options (used by the render operation)",
@@ -225,7 +233,12 @@ class VideoCompose(BaseTool):
     ]
     retry_policy = RetryPolicy(max_retries=1, retryable_errors=["Conversion failed"])
     resume_support = ResumeSupport.FROM_START
-    idempotency_key_fields = ["operation", "input_path", "edit_decisions"]
+    idempotency_key_fields = [
+        "operation",
+        "input_path",
+        "edit_decisions",
+        "composition_id",
+    ]
     side_effects = ["writes video file to output_path"]
     user_visible_verification = [
         "Play the composed output and verify cuts, subtitles, and overlays",
@@ -746,6 +759,31 @@ class VideoCompose(BaseTool):
         "animation-first": "Explainer",
     }
 
+    # Explicit composition selection is intentionally conservative. Keep this
+    # list in sync with the shared remotion-composer/src/Root.tsx registrations;
+    # arbitrary IDs would let a caller bypass the composition contract.
+    REGISTERED_COMPOSITION_IDS = frozenset(
+        {
+            "Explainer",
+            "CinematicRenderer",
+            "SignalFromTomorrowWithMusic",
+            "TalkingHead",
+            "CamelotMoodShort",
+            "CamelotImpactShort",
+            "CamelotSwitchShort",
+            "CamelotCleanShort",
+            "TitledVideo",
+            "HeroTitle",
+            "ProductReveal",
+            "ProductRevealVertical",
+            "CaptionOverlayOnly",
+            "CollageBurst",
+            "LyricOverlay",
+            "EndTag",
+            "EndTagOverlay",
+        }
+    )
+
     @classmethod
     def _get_composition_id(cls, renderer_family: str) -> str:
         """Resolve renderer_family to Remotion composition ID.
@@ -761,6 +799,16 @@ class VideoCompose(BaseTool):
                 f"Set renderer_family at proposal stage."
             )
         return comp
+
+    @classmethod
+    def _get_registered_composition_id(cls, composition_id: str) -> str:
+        """Validate an explicitly selected shared Remotion composition."""
+        if composition_id not in cls.REGISTERED_COMPOSITION_IDS:
+            raise ValueError(
+                f"Unknown composition_id {composition_id!r}. Valid registered "
+                f"compositions: {sorted(cls.REGISTERED_COMPOSITION_IDS)}."
+            )
+        return composition_id
 
     @staticmethod
     def _cuts_to_cinematic_scenes(cuts: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1990,10 +2038,21 @@ class VideoCompose(BaseTool):
                 error=f"Remotion composer project not found at {composer_dir}",
             )
 
-        # Route to the correct Remotion composition based on renderer_family.
-        # This prevents all pipelines from collapsing into the Explainer visual grammar.
-        renderer_family = (composition_data or {}).get("renderer_family", "explainer-data")
-        composition_id = self._get_composition_id(renderer_family)
+        # Route to a caller-selected registered composition when requested;
+        # otherwise keep the existing renderer_family mapping unchanged.
+        requested_composition_id = inputs.get("composition_id")
+        try:
+            if requested_composition_id is not None:
+                composition_id = self._get_registered_composition_id(
+                    requested_composition_id
+                )
+            else:
+                renderer_family = (composition_data or {}).get(
+                    "renderer_family", "explainer-data"
+                )
+                composition_id = self._get_composition_id(renderer_family)
+        except (TypeError, ValueError) as exc:
+            return ToolResult(success=False, error=str(exc))
 
         if composition_id == "CinematicRenderer":
             if not props.get("scenes") and props.get("cuts"):
@@ -2131,6 +2190,7 @@ class VideoCompose(BaseTool):
                 "output": str(output_path),
                 "profile": profile_name,
                 "staged_media_count": staged_count,
+                "composition_id": composition_id,
             },
             artifacts=[str(output_path)],
         )

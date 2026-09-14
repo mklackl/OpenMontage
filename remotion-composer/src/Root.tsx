@@ -7,6 +7,22 @@ import {
 import { signalFromTomorrowWithMusicFixture } from "./cinematic/fixtures";
 import { TalkingHead, TalkingHeadProps } from "./TalkingHead";
 import {
+  MoodShort,
+  MoodShortProps,
+  calculateMoodShortMetadata,
+} from "./MoodShort";
+import {
+  CleanShort,
+  CleanShortProps,
+  ImpactShort,
+  ImpactShortProps,
+  SwitchShort,
+  SwitchShortProps,
+  calculateCleanShortMetadata,
+  calculateImpactShortMetadata,
+  calculateSwitchShortMetadata,
+} from "./ShortPatterns";
+import {
   TitledVideo,
   calculateTitledVideoMetadata,
 } from "./TitledVideo";
@@ -190,6 +206,74 @@ export const Root: React.FC = () => {
           fontSize: 52,
           highlightColor: "#22D3EE",
         }}
+      />
+      <Composition
+        id="CamelotMoodShort"
+        component={MoodShort}
+        // The sample is 13.824s at 30fps; calculateMetadata honors a
+        // durationSeconds prop for other source clips.
+        durationInFrames={415}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          videoSrc: "",
+          mood: "neutral",
+          sourceHasBurnedCaptions: "unverified",
+          captions: [],
+          musicSrc: "",
+        } as MoodShortProps}
+        calculateMetadata={calculateMoodShortMetadata}
+      />
+      <Composition
+        id="CamelotImpactShort"
+        component={ImpactShort}
+        durationInFrames={415}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          videoSrc: "",
+          mood: "neutral",
+          sourceHasBurnedCaptions: "unverified",
+          captions: [],
+          musicSrc: "",
+          facecamCropVerified: false,
+        } as ImpactShortProps}
+        calculateMetadata={calculateImpactShortMetadata}
+      />
+      <Composition
+        id="CamelotSwitchShort"
+        component={SwitchShort}
+        durationInFrames={415}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          videoSrc: "",
+          mood: "neutral",
+          sourceHasBurnedCaptions: "unverified",
+          captions: [],
+          musicSrc: "",
+          focusShots: [],
+        } as SwitchShortProps}
+        calculateMetadata={calculateSwitchShortMetadata}
+      />
+      <Composition
+        id="CamelotCleanShort"
+        component={CleanShort}
+        durationInFrames={415}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          videoSrc: "",
+          mood: "neutral",
+          sourceHasBurnedCaptions: "unverified",
+          captions: [],
+          musicSrc: "",
+        } as CleanShortProps}
+        calculateMetadata={calculateCleanShortMetadata}
       />
       <Composition
         id="TitledVideo"
