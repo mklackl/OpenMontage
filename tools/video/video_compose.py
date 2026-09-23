@@ -187,7 +187,7 @@ class VideoCompose(BaseTool):
                 "type": "string",
                 "description": (
                     "Optional registered Remotion composition ID for the "
-                    "remotion_render operation (for example CamelotMoodShort). "
+                    "remotion_render operation (for example ForeverMoodShort). "
                     "When omitted, renderer_family routing remains unchanged."
                 ),
             },
@@ -769,9 +769,13 @@ class VideoCompose(BaseTool):
             "SignalFromTomorrowWithMusic",
             "TalkingHead",
             "CamelotMoodShort",
+            "ForeverMoodShort",
             "CamelotImpactShort",
+            "ForeverImpactShort",
             "CamelotSwitchShort",
+            "ForeverSwitchShort",
             "CamelotCleanShort",
+            "ForeverCleanShort",
             "TitledVideo",
             "HeroTitle",
             "ProductReveal",

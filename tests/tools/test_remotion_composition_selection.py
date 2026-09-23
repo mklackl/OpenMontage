@@ -12,9 +12,13 @@ def test_composition_id_is_optional_input_and_template_is_allowlisted():
     assert "composition_id" in VideoCompose.input_schema["properties"]
     for composition_id in (
         "CamelotMoodShort",
+        "ForeverMoodShort",
         "CamelotImpactShort",
+        "ForeverImpactShort",
         "CamelotSwitchShort",
+        "ForeverSwitchShort",
         "CamelotCleanShort",
+        "ForeverCleanShort",
     ):
         assert VideoCompose._get_registered_composition_id(composition_id) == composition_id
     assert VideoCompose._get_composition_id("explainer-data") == "Explainer"
@@ -62,13 +66,13 @@ def test_remotion_render_accepts_registered_composition_id(
                 "videoSrc": "/tmp/source.mp4",
                 "durationSeconds": 13.824,
             },
-            "composition_id": "CamelotMoodShort",
+            "composition_id": "ForeverMoodShort",
             "output_path": str(output_path),
         }
     )
 
     assert result.success, result.error
-    assert seen["cmd"][4] == "CamelotMoodShort"
+    assert seen["cmd"][4] == "ForeverMoodShort"
 
 
 def test_remotion_render_rejects_unregistered_composition_id(

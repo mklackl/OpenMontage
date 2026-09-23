@@ -226,7 +226,42 @@ export const Root: React.FC = () => {
         calculateMetadata={calculateMoodShortMetadata}
       />
       <Composition
+        id="ForeverMoodShort"
+        component={MoodShort}
+        // The sample is 13.824s at 30fps; calculateMetadata honors a
+        // durationSeconds prop for other source clips.
+        durationInFrames={415}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          videoSrc: "",
+          mood: "neutral",
+          sourceHasBurnedCaptions: "unverified",
+          captions: [],
+          musicSrc: "",
+        } as MoodShortProps}
+        calculateMetadata={calculateMoodShortMetadata}
+      />
+      <Composition
         id="CamelotImpactShort"
+        component={ImpactShort}
+        durationInFrames={415}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          videoSrc: "",
+          mood: "neutral",
+          sourceHasBurnedCaptions: "unverified",
+          captions: [],
+          musicSrc: "",
+          facecamCropVerified: false,
+        } as ImpactShortProps}
+        calculateMetadata={calculateImpactShortMetadata}
+      />
+      <Composition
+        id="ForeverImpactShort"
         component={ImpactShort}
         durationInFrames={415}
         fps={30}
@@ -260,7 +295,40 @@ export const Root: React.FC = () => {
         calculateMetadata={calculateSwitchShortMetadata}
       />
       <Composition
+        id="ForeverSwitchShort"
+        component={SwitchShort}
+        durationInFrames={415}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          videoSrc: "",
+          mood: "neutral",
+          sourceHasBurnedCaptions: "unverified",
+          captions: [],
+          musicSrc: "",
+          focusShots: [],
+        } as SwitchShortProps}
+        calculateMetadata={calculateSwitchShortMetadata}
+      />
+      <Composition
         id="CamelotCleanShort"
+        component={CleanShort}
+        durationInFrames={415}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          videoSrc: "",
+          mood: "neutral",
+          sourceHasBurnedCaptions: "unverified",
+          captions: [],
+          musicSrc: "",
+        } as CleanShortProps}
+        calculateMetadata={calculateCleanShortMetadata}
+      />
+      <Composition
+        id="ForeverCleanShort"
         component={CleanShort}
         durationInFrames={415}
         fps={30}
