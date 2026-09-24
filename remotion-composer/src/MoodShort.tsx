@@ -9,6 +9,41 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { loadFont as loadBarlowSemiCondensed } from "@remotion/google-fonts/BarlowSemiCondensed";
+import { loadFont as loadCinzel } from "@remotion/google-fonts/Cinzel";
+
+const { fontFamily: displayFont } = loadBarlowSemiCondensed("normal", {
+  weights: ["600", "700", "800"],
+  subsets: ["latin"],
+});
+const { fontFamily: brandFont } = loadCinzel("normal", {
+  weights: ["600"],
+  subsets: ["latin"],
+});
+
+/**
+ * Realm First "Field Desk" look (camel-youtube DESIGN.md): edge-to-edge
+ * footage, square corners, an engraved brass seam and parchment type.
+ */
+export const FIELD_DESK = {
+  ink: "#070b0d",
+  parchment: "#f0e5ca",
+  brass: "#b28a3e",
+  gold: "#edc66d",
+  display: displayFont,
+  brand: brandFont,
+  /** Keeps overlays clear of the TikTok/Shorts/Reels top bar. */
+  safeTopPx: 150,
+} as const;
+
+/** A hard black outline built from shadows; works in every Chromium build. */
+export function outlineShadow(px: number, color = "#000"): string {
+  const steps = 16;
+  return Array.from({ length: steps }, (_, index) => {
+    const angle = (index / steps) * Math.PI * 2;
+    return `${(Math.cos(angle) * px).toFixed(1)}px ${(Math.sin(angle) * px).toFixed(1)}px 0 ${color}`;
+  }).join(", ");
+}
 
 /** The two editorial reads supported by the reusable short-form template. */
 export type MoodShortMood = "funny" | "hype" | "neutral";
@@ -175,50 +210,23 @@ const DEFAULT_PANEL_LAYOUT: Record<
   MoodShortPanelRole,
   Omit<ResolvedMoodShortPanel, "role" | "crop" | "emphasisWindows">
 > = {
+  // Field Desk: panels touch the frame edges and each other (SHORT_TEMPLATE.md).
   upper: {
     id: "upper",
-    top: 0.075,
-    left: 0.07,
-    width: 0.86,
-    height: 0.3,
-    borderRadius: 28,
+    top: 0,
+    left: 0,
+    width: 1,
+    // 0.35 keeps the facecam panel at ~1.6:1, the aspect existing crops are tuned for.
+    height: 0.35,
+    borderRadius: 0,
   },
   lower: {
     id: "lower",
-    top: 0.405,
-    left: 0.04,
-    width: 0.92,
-    height: 0.47,
-    borderRadius: 28,
-  },
-};
-
-const MOOD_PALETTES: Record<
-  MoodShortMood,
-  {
-    accent: string;
-    panelBorder: string;
-    captionHighlight: string;
-    hookBackground: string;
-  }
-> = {
-  funny: {
-    accent: "#FFD166",
-    panelBorder: "rgba(255, 209, 102, 0.62)",
-    captionHighlight: "#FFD166",
-    hookBackground: "rgba(57, 38, 8, 0.9)",
-  },
-  hype: {
-    accent: "#76E4F7",
-    panelBorder: "rgba(118, 228, 247, 0.58)",
-    captionHighlight: "#76E4F7",
-    hookBackground: "rgba(6, 43, 53, 0.9)",
-  },
-  neutral: {
-    accent: "#D7DBE3",
-    panelBorder: "rgba(215, 219, 227, 0.42)",
-    captionHighlight: "#F7F4ED",
-    hookBackground: "rgba(20, 22, 27, 0.9)",
+    top: 0.35,
+    left: 0,
+    width: 1,
+    height: 0.65,
+    borderRadius: 0,
   },
 };
 
@@ -809,14 +817,99 @@ export const PanelMedia: React.FC<{
   );
 };
 
+/** Square ink tag for a panel label (creator, zone, focus). */
+export const PanelTag: React.FC<{ label: string; top: number; left?: number }> = ({
+  label,
+  top,
+  left = 36,
+}) => (
+  <div
+    data-short-panel-tag="true"
+    style={{
+      position: "absolute",
+      top,
+      left,
+      padding: "6px 14px 7px 12px",
+      borderLeft: `3px solid ${FIELD_DESK.brass}`,
+      backgroundColor: "rgba(7, 11, 13, 0.78)",
+      color: FIELD_DESK.parchment,
+      fontFamily: FIELD_DESK.display,
+      fontSize: 24,
+      lineHeight: 1.1,
+      fontWeight: 700,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+    }}
+  >
+    {label}
+  </div>
+);
+
+/** The small static Realm First mark the template asks for. */
+export const BrandMark: React.FC<{ top: number; right?: number }> = ({
+  top,
+  right = 36,
+}) => (
+  <div
+    data-short-brand-mark="true"
+    style={{
+      position: "absolute",
+      top,
+      right,
+      zIndex: 4,
+      color: FIELD_DESK.gold,
+      fontFamily: FIELD_DESK.brand,
+      fontSize: 26,
+      fontWeight: 600,
+      letterSpacing: "0.08em",
+      textShadow: "0 2px 6px rgba(0,0,0,0.85)",
+      pointerEvents: "none",
+    }}
+  >
+    Realm First
+  </div>
+);
+
+/** Engraved brass rule with a center diamond where the two panels meet. */
+const BrassSeam: React.FC<{ topPx: number }> = ({ topPx }) => (
+  <div
+    data-short-seam="true"
+    style={{
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: topPx - 2,
+      height: 4,
+      zIndex: 3,
+      backgroundColor: FIELD_DESK.brass,
+      boxShadow: "0 -2px 0 rgba(0,0,0,0.55), 0 2px 0 rgba(0,0,0,0.55)",
+      pointerEvents: "none",
+    }}
+  >
+    <div
+      style={{
+        position: "absolute",
+        left: "50%",
+        top: 2,
+        width: 22,
+        height: 22,
+        marginLeft: -11,
+        marginTop: -11,
+        transform: "rotate(45deg)",
+        backgroundColor: FIELD_DESK.gold,
+        border: `3px solid ${FIELD_DESK.ink}`,
+      }}
+    />
+  </div>
+);
+
 const MoodShortPanelRenderer: React.FC<{
   panel: ResolvedMoodShortPanel;
   source: string;
-  mood: MoodShortMood;
   globalWindows: MoodShortEmphasisWindow[];
   panelGapPx: number;
   sourceAspectRatio: number;
-}> = ({ panel, source, mood, globalWindows, panelGapPx, sourceAspectRatio }) => {
+}> = ({ panel, source, globalWindows, panelGapPx, sourceAspectRatio }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const windows = [...globalWindows, ...panel.emphasisWindows];
@@ -827,8 +920,8 @@ const MoodShortPanelRenderer: React.FC<{
     panel.role,
     panel.id,
   );
-  const palette = MOOD_PALETTES[mood];
   const panelAspectRatio = (panel.width * width) / (panel.height * height);
+  const panelTopPx = panel.top * height;
   const fittedCrop = fitMoodShortCropToPanel(
     panel.crop,
     panelAspectRatio,
@@ -846,43 +939,20 @@ const MoodShortPanelRenderer: React.FC<{
         height: `${panel.height * 100}%`,
         overflow: "hidden",
         borderRadius: panel.borderRadius,
-        border: `2px solid ${palette.panelBorder}`,
-        boxShadow: "0 18px 50px rgba(0, 0, 0, 0.42)",
         transform: `scale(${punchInScale})`,
         transformOrigin: "center center",
-        backgroundColor: "#17181d",
+        backgroundColor: FIELD_DESK.ink,
         marginTop: panel.role === "lower" ? panelGapPx : 0,
         zIndex: 2,
       }}
     >
       <PanelMedia source={source} crop={fittedCrop} />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(180deg, rgba(0,0,0,0.03) 45%, rgba(0,0,0,0.32) 100%)",
-          pointerEvents: "none",
-        }}
-      />
       {panel.label && (
-        <div
-          style={{
-            position: "absolute",
-            top: 18,
-            left: 18,
-            padding: "7px 12px",
-            borderRadius: 999,
-            backgroundColor: "rgba(8, 9, 12, 0.72)",
-            color: "rgba(255,255,255,0.82)",
-            fontFamily: "Inter, system-ui, sans-serif",
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-          }}
-        >
-          {panel.label}
-        </div>
+        // Upper tag clears the platform top bar; lower tag clears the seam caption.
+        <PanelTag
+          label={panel.label}
+          top={panel.role === "upper" ? Math.max(24, FIELD_DESK.safeTopPx - panelTopPx) : 104}
+        />
       )}
     </div>
   );
@@ -892,8 +962,7 @@ export const HookOverlay: React.FC<{
   hook: MoodShortHook | undefined;
   fallbackText?: string;
   fallbackLabel?: string;
-  mood: MoodShortMood;
-}> = ({ hook, fallbackText, fallbackLabel, mood }) => {
+}> = ({ hook, fallbackText, fallbackLabel }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const text = hook?.text || fallbackText;
@@ -917,75 +986,77 @@ export const HookOverlay: React.FC<{
   const translateY = interpolate(
     frame,
     [startFrame, startFrame + fadeFrames],
-    [26, 0],
+    [-24, 0],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
   );
-  const scale = interpolate(
-    frame,
-    [startFrame, startFrame + fadeFrames],
-    [0.96, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
-  );
-  const palette = MOOD_PALETTES[mood];
   const label = hook?.sourceLabel || fallbackLabel;
+  const brassRule: React.CSSProperties = {
+    flex: "0 0 90px",
+    height: 2,
+    backgroundColor: FIELD_DESK.brass,
+  };
 
+  // Ink bar across the top edge; its text starts below the platform top bar.
   return (
     <div
       data-mood-short-hook="true"
       style={{
         position: "absolute",
-        top: 116,
-        left: 72,
-        right: 72,
+        top: 0,
+        left: 0,
+        right: 0,
         zIndex: 5,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
+        padding: `${FIELD_DESK.safeTopPx - 36}px 56px 22px`,
+        textAlign: "center",
+        backgroundColor: "rgba(7, 11, 13, 0.94)",
+        borderBottom: `3px solid ${FIELD_DESK.brass}`,
+        boxShadow: "0 3px 0 rgba(0,0,0,0.55)",
         opacity,
-        transform: `translateY(${translateY}px) scale(${scale})`,
+        transform: `translateY(${translateY}px)`,
         pointerEvents: "none",
       }}
     >
       <div
         style={{
-          maxWidth: 900,
-          padding: "18px 28px 20px",
-          borderRadius: 20,
-          textAlign: "center",
-          backgroundColor: palette.hookBackground,
-          border: `1px solid ${palette.accent}88`,
-          boxShadow: `0 14px 42px rgba(0,0,0,0.32), 0 0 26px ${palette.accent}22`,
-        }}
+          color: FIELD_DESK.parchment,
+          fontFamily: FIELD_DESK.display,
+          fontSize: 68,
+          lineHeight: 0.98,
+          fontWeight: 700,
+          letterSpacing: "-0.01em",
+          textTransform: "uppercase",
+          textWrap: "balance",
+        } as React.CSSProperties}
       >
+        {text}
+      </div>
+      {label && (
         <div
           style={{
-            color: "#FFFDF7",
-            fontFamily: "Inter, system-ui, sans-serif",
-            fontSize: 56,
-            lineHeight: 1.06,
-            fontWeight: 850,
-            letterSpacing: "-0.025em",
+            marginTop: 12,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 18,
           }}
         >
-          {text}
-        </div>
-        {label && (
-          <div
+          <span style={brassRule} />
+          <span
             style={{
-              marginTop: 10,
-              color: palette.accent,
-              fontFamily: "Inter, system-ui, sans-serif",
-              fontSize: 18,
+              color: FIELD_DESK.brass,
+              fontFamily: FIELD_DESK.brand,
+              fontSize: 24,
               lineHeight: 1.2,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
+              fontWeight: 600,
+              letterSpacing: "0.14em",
               textTransform: "uppercase",
             }}
           >
             {label}
-          </div>
-        )}
-      </div>
+          </span>
+          <span style={brassRule} />
+        </div>
+      )}
     </div>
   );
 };
@@ -996,7 +1067,9 @@ export const CaptionLayer: React.FC<{
   bottomPx: number;
   fontSize: number;
   highlightColor: string;
-}> = ({ captions, fps, bottomPx, fontSize, highlightColor }) => {
+  /** When set, the caption is centered on this y (the Mood seam) instead of bottomPx. */
+  centerYPx?: number;
+}> = ({ captions, fps, bottomPx, fontSize, highlightColor, centerYPx }) => {
   const frame = useCurrentFrame();
   const caption = getActiveMoodShortCaption(captions, frame, fps);
   if (!caption || !caption.text) return null;
@@ -1041,79 +1114,55 @@ export const CaptionLayer: React.FC<{
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
   );
 
+  const onSeam = centerYPx !== undefined;
+  const scale = entranceScale + highlightPulse * 0.045;
+
   return (
     <div
       data-mood-short-caption="true"
       data-caption-highlight={isHighlight ? "true" : "false"}
       style={{
         position: "absolute",
-        left: 80,
-        right: 170,
-        bottom: bottomPx,
+        // The seam sits above the platform action rail, so it may use the full width.
+        left: onSeam ? 40 : 80,
+        right: onSeam ? 40 : 170,
+        ...(onSeam ? { top: centerYPx } : { bottom: bottomPx }),
         zIndex: 6,
         display: "flex",
         justifyContent: "center",
         opacity,
-        transform: `translateY(${entranceY}px) scale(${entranceScale + highlightPulse * 0.045})`,
-        transformOrigin: "center bottom",
+        transform: onSeam
+          ? `translateY(calc(-50% + ${entranceY}px)) scale(${scale})`
+          : `translateY(${entranceY}px) scale(${scale})`,
+        transformOrigin: onSeam ? "center center" : "center bottom",
         pointerEvents: "none",
       }}
     >
       <div
         style={{
-          maxWidth: 900,
-          position: "relative",
-          padding: "16px 24px 17px",
-          borderRadius: 16,
-          backgroundColor: isHighlight
-            ? "rgba(24, 19, 8, 0.96)"
-            : "rgba(6, 7, 10, 0.94)",
-          border: isHighlight
-            ? `2px solid ${highlightColor}CC`
-            : "2px solid rgba(255,255,255,0.28)",
-          boxShadow: isHighlight
-            ? `0 14px 38px rgba(0, 0, 0, 0.55), 0 0 22px ${highlightColor}38`
-            : "0 14px 38px rgba(0, 0, 0, 0.58)",
           color: "#FFFDF7",
-          fontFamily: "Inter, system-ui, sans-serif",
+          fontFamily: FIELD_DESK.display,
           fontSize,
-          lineHeight: 1.16,
-          fontWeight: isHighlight ? 850 : 760,
-          letterSpacing: "-0.018em",
+          lineHeight: 1.02,
+          fontWeight: 800,
+          letterSpacing: "-0.005em",
           textAlign: "center",
-          textShadow: "0 2px 0 rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.75)",
+          textTransform: "uppercase",
+          textWrap: "balance",
+          textShadow: `${outlineShadow(Math.max(3, fontSize * 0.075))}, 0 8px 18px rgba(0,0,0,0.65)`,
           whiteSpace: "pre-wrap",
           display: "-webkit-box",
           WebkitBoxOrient: "vertical",
           WebkitLineClamp: 2,
           overflow: "hidden",
-        }}
+          // Room for the outline, which line-clamp would otherwise clip.
+          padding: "0.12em 0.14em",
+        } as React.CSSProperties}
       >
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: -2,
-            left: 24,
-            right: 24,
-            height: 4,
-            borderRadius: 999,
-            background: `linear-gradient(90deg, transparent, ${highlightColor}, transparent)`,
-            opacity: isHighlight ? 1 : 0.72,
-          }}
-        />
         {captionRuns.map((run, index) => (
           <span
             key={`${index}-${run.text}`}
-            style={
-              run.accent
-                ? {
-                    color: highlightColor,
-                    fontWeight: 900,
-                    textShadow: `0 2px 0 rgba(0,0,0,0.95), 0 0 13px ${highlightColor}55`,
-                  }
-                : undefined
-            }
+            style={run.accent ? { color: highlightColor } : undefined}
           >
             {run.text}
           </span>
@@ -1154,11 +1203,11 @@ export const MoodShort: React.FC<MoodShortProps> = ({
   backgroundOpacity = 0.96,
   panelGapPx = 0,
   captionBottomPx = 270,
-  captionFontSize = 42,
+  captionFontSize = 76,
   captionHighlightColor,
 }) => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { fps, durationInFrames, height } = useVideoConfig();
   const safeMood: MoodShortMood =
     mood === "funny" || mood === "hype" ? mood : "neutral";
   const safeSourceAspectRatio = clamp(
@@ -1166,7 +1215,6 @@ export const MoodShort: React.FC<MoodShortProps> = ({
     0.5,
     4,
   );
-  const palette = MOOD_PALETTES[safeMood];
   const resolvedSource = [videoSrc, sourceSrc, sourceVideoSrc, source].find(
     (candidate): candidate is string =>
       typeof candidate === "string" && candidate.trim().length > 0,
@@ -1200,17 +1248,18 @@ export const MoodShort: React.FC<MoodShortProps> = ({
   const safeCaptionHighlightColor = optionalMoodShortString(
     captionHighlightColor,
   );
-  const maxCaptionFontSize = clamp(finiteOr(captionFontSize, 42), 24, 64);
+  const maxCaptionFontSize = clamp(finiteOr(captionFontSize, 76), 24, 96);
   const safeCaptionBottomPx = clamp(finiteOr(captionBottomPx, 270), 240, 360);
   const safePanelGapPx = clamp(finiteOr(panelGapPx, 0), 0, 48);
+  const seamPx = resolvedPanels[1].top * height;
 
   return (
     <AbsoluteFill
       data-mood-short="true"
       style={{
-        backgroundColor: "#090A0D",
+        backgroundColor: FIELD_DESK.ink,
         overflow: "hidden",
-        fontFamily: "Inter, system-ui, sans-serif",
+        fontFamily: FIELD_DESK.display,
       }}
     >
       {/* This is the only unmuted source layer: creator audio stays intact. */}
@@ -1248,7 +1297,6 @@ export const MoodShort: React.FC<MoodShortProps> = ({
       <MoodShortPanelRenderer
         panel={resolvedPanels[0]}
         source={sourceAsset}
-        mood={safeMood}
         globalWindows={globalWindows}
         panelGapPx={safePanelGapPx}
         sourceAspectRatio={safeSourceAspectRatio}
@@ -1256,17 +1304,15 @@ export const MoodShort: React.FC<MoodShortProps> = ({
       <MoodShortPanelRenderer
         panel={resolvedPanels[1]}
         source={sourceAsset}
-        mood={safeMood}
         globalWindows={globalWindows}
         panelGapPx={safePanelGapPx}
         sourceAspectRatio={safeSourceAspectRatio}
       />
 
-      <HookOverlay
-        hook={hookValue}
-        fallbackLabel={safeSourceLabel}
-        mood={safeMood}
-      />
+      {seamPx > 0 && <BrassSeam topPx={seamPx} />}
+      <BrandMark top={seamPx + 104} />
+
+      <HookOverlay hook={hookValue} fallbackLabel={safeSourceLabel} />
 
       {sourceAsset && sourceHasBurnedCaptions === false && (
         <CaptionLayer
@@ -1274,9 +1320,8 @@ export const MoodShort: React.FC<MoodShortProps> = ({
           fps={fps}
           bottomPx={safeCaptionBottomPx}
           fontSize={maxCaptionFontSize}
-          highlightColor={
-            safeCaptionHighlightColor || MOOD_PALETTES[safeMood].captionHighlight
-          }
+          highlightColor={safeCaptionHighlightColor || FIELD_DESK.gold}
+          centerYPx={seamPx > 0 ? seamPx : undefined}
         />
       )}
 
@@ -1295,26 +1340,6 @@ export const MoodShort: React.FC<MoodShortProps> = ({
           data-mood-short-music="true"
         />
       )}
-
-      {/* A subtle bottom rule gives the captions a safe visual anchor. */}
-      <div
-        style={{
-          position: "absolute",
-          left: 72,
-          right: 72,
-          bottom: Math.max(86, safeCaptionBottomPx - 44),
-          height: 2,
-          background: `linear-gradient(90deg, transparent 0%, ${palette.accent}55 24%, ${palette.accent}55 76%, transparent 100%)`,
-          opacity: interpolate(
-            frame,
-            [0, Math.max(1, Math.round(fps * 0.35))],
-            [0, 0.7],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
-          ),
-          zIndex: 4,
-          pointerEvents: "none",
-        }}
-      />
     </AbsoluteFill>
   );
 };

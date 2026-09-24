@@ -10,8 +10,11 @@ import {
 } from "remotion";
 
 import {
+  BrandMark,
   CaptionLayer,
+  FIELD_DESK,
   HookOverlay,
+  PanelTag,
   MOOD_SHORT_DEFAULT_DURATION_FRAMES,
   MOOD_SHORT_FPS,
   MOOD_SHORT_HEIGHT,
@@ -90,12 +93,6 @@ export type CleanShortProps = ShortPatternBaseProps & {
 };
 
 const FULL_CROP: MoodShortCrop = { x: 0, y: 0, width: 1, height: 1 };
-
-const PATTERN_ACCENTS: Record<MoodShortMood, string> = {
-  funny: "#FFD166",
-  hype: "#E3A13B",
-  neutral: "#D8C29A",
-};
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
@@ -342,7 +339,7 @@ const PatternShell: React.FC<{
   const source = resolveShortPatternSource(props);
   const mood = resolveMood(props.mood);
   const accent =
-    optionalString(props.captionHighlightColor) || PATTERN_ACCENTS[mood];
+    optionalString(props.captionHighlightColor) || FIELD_DESK.gold;
   const sourceLabel = optionalString(props.sourceLabel);
   const hook = normalizeShortPatternHook(
     props.hook,
@@ -366,9 +363,9 @@ const PatternShell: React.FC<{
       data-camelot-short-pattern="true"
       style={{
         overflow: "hidden",
-        backgroundColor: "#090A0D",
+        backgroundColor: FIELD_DESK.ink,
         color: "#FFFDF7",
-        fontFamily: "Inter, system-ui, sans-serif",
+        fontFamily: FIELD_DESK.display,
       }}
     >
       <BaseSourceLayer
@@ -385,7 +382,8 @@ const PatternShell: React.FC<{
         }}
       />
       {children}
-      <HookOverlay hook={hook} fallbackLabel={sourceLabel} mood={mood} />
+      <BrandMark top={FIELD_DESK.safeTopPx} />
+      <HookOverlay hook={hook} fallbackLabel={sourceLabel} />
       {source && props.sourceHasBurnedCaptions === false && (
         <CaptionLayer
           captions={captions}
@@ -398,7 +396,7 @@ const PatternShell: React.FC<{
           fontSize={clamp(
             finiteOr(props.captionFontSize, captionFontSize),
             28,
-            64,
+            96,
           )}
           highlightColor={accent}
         />
@@ -419,16 +417,17 @@ const CropPanel: React.FC<{
   sourceAspectRatio: number;
   panelAspectRatio: number;
   label?: string;
-  accent: string;
-  radius?: number;
+  labelTopPx?: number;
+  /** Brass hairline for insets that float over other footage. */
+  framed?: boolean;
 }> = ({
   source,
   crop,
   sourceAspectRatio,
   panelAspectRatio,
   label,
-  accent,
-  radius = 28,
+  labelTopPx = 18,
+  framed = false,
 }) => {
   const fittedCrop = resolveShortPatternCrop(
     crop,
@@ -439,39 +438,13 @@ const CropPanel: React.FC<{
     <AbsoluteFill
       style={{
         overflow: "hidden",
-        borderRadius: radius,
-        border: `2px solid ${accent}99`,
-        boxShadow: "0 20px 56px rgba(0,0,0,0.46)",
-        backgroundColor: "#17181D",
+        border: framed ? `3px solid ${FIELD_DESK.brass}` : undefined,
+        boxShadow: framed ? "0 12px 32px rgba(0,0,0,0.5)" : undefined,
+        backgroundColor: FIELD_DESK.ink,
       }}
     >
       <PanelMedia source={source} crop={fittedCrop} />
-      <AbsoluteFill
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(0,0,0,0.02) 55%, rgba(0,0,0,0.32) 100%)",
-        }}
-      />
-      {label && (
-        <div
-          style={{
-            position: "absolute",
-            top: 18,
-            left: 18,
-            padding: "7px 13px",
-            borderRadius: 999,
-            color: "rgba(255,255,255,0.88)",
-            backgroundColor: "rgba(6,7,10,0.78)",
-            fontSize: 18,
-            lineHeight: 1.1,
-            fontWeight: 800,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-          }}
-        >
-          {label}
-        </div>
-      )}
+      {label && <PanelTag label={label} top={labelTopPx} left={framed ? 14 : 36} />}
     </AbsoluteFill>
   );
 };
@@ -480,9 +453,6 @@ export const ImpactShort: React.FC<ImpactShortProps> = (props) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const source = resolveShortPatternSource(props);
-  const mood = resolveMood(props.mood);
-  const accent =
-    optionalString(props.captionHighlightColor) || PATTERN_ACCENTS[mood];
   const sourceAspectRatio = resolveShortPatternAspectRatio(props.sourceAspectRatio);
   const mainCrop = optionalCrop(props.mainCrop);
   const facecamCrop = resolveImpactFacecamCrop(
@@ -490,7 +460,7 @@ export const ImpactShort: React.FC<ImpactShortProps> = (props) => {
     props.facecamCropVerified,
     props.sourceAspectRatio,
   );
-  const heroAspectRatio = 934 / 1630;
+  const heroAspectRatio = 1080 / 1920;
   const heroScale = getMoodShortPunchInScale(
     frame,
     fps,
@@ -507,16 +477,13 @@ export const ImpactShort: React.FC<ImpactShortProps> = (props) => {
   );
 
   return (
-    <PatternShell props={props} captionBottomPx={270} captionFontSize={52}>
+    <PatternShell props={props} captionBottomPx={270} captionFontSize={68}>
       <div
         data-impact-hero="true"
         style={{
           position: "absolute",
           zIndex: 2,
-          left: 26,
-          right: 120,
-          top: 82,
-          height: 1630,
+          inset: 0,
           transform: `scale(${heroScale})`,
           transformOrigin: "center center",
         }}
@@ -526,8 +493,6 @@ export const ImpactShort: React.FC<ImpactShortProps> = (props) => {
           crop={mainCrop}
           sourceAspectRatio={sourceAspectRatio}
           panelAspectRatio={heroAspectRatio}
-          accent={accent}
-          radius={34}
         />
       </div>
 
@@ -551,25 +516,10 @@ export const ImpactShort: React.FC<ImpactShortProps> = (props) => {
             sourceAspectRatio={sourceAspectRatio}
             panelAspectRatio={360 / 300}
             label={resolveImpactFacecamLabel(props.facecamLabel)}
-            accent={accent}
-            radius={24}
+            framed
           />
         </div>
       )}
-
-      <div
-        style={{
-          position: "absolute",
-          zIndex: 3,
-          left: 58,
-          bottom: 160,
-          width: 210,
-          height: 6,
-          borderRadius: 999,
-          background: `linear-gradient(90deg, ${accent}, transparent)`,
-          opacity: 0.8,
-        }}
-      />
     </PatternShell>
   );
 };
@@ -648,9 +598,8 @@ export const SwitchShort: React.FC<SwitchShortProps> = (props) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const source = resolveShortPatternSource(props);
-  const mood = resolveMood(props.mood);
   const accent =
-    optionalString(props.captionHighlightColor) || PATTERN_ACCENTS[mood];
+    optionalString(props.captionHighlightColor) || FIELD_DESK.gold;
   const sourceAspectRatio = resolveShortPatternAspectRatio(props.sourceAspectRatio);
   const focusShots = normalizeSwitchFocusShots(props.focusShots);
   const activeIndex = getSwitchFocusShotIndexFromNormalized(
@@ -677,17 +626,14 @@ export const SwitchShort: React.FC<SwitchShortProps> = (props) => {
     "FOCUS";
 
   return (
-    <PatternShell props={props} captionBottomPx={270} captionFontSize={52}>
+    <PatternShell props={props} captionBottomPx={270} captionFontSize={68}>
       <div
         data-switch-hero="true"
         data-switch-shot-index={activeIndex}
         style={{
           position: "absolute",
           zIndex: 2,
-          left: 34,
-          right: 128,
-          top: 110,
-          height: 1450,
+          inset: 0,
           transform: `scale(${editorialScale})`,
           transformOrigin: "center center",
         }}
@@ -696,10 +642,9 @@ export const SwitchShort: React.FC<SwitchShortProps> = (props) => {
           source={source}
           crop={activeShot?.crop || optionalCrop(props.defaultCrop)}
           sourceAspectRatio={sourceAspectRatio}
-          panelAspectRatio={918 / 1450}
+          panelAspectRatio={1080 / 1920}
           label={label}
-          accent={accent}
-          radius={34}
+          labelTopPx={FIELD_DESK.safeTopPx}
         />
       </div>
 
@@ -722,10 +667,8 @@ export const SwitchShort: React.FC<SwitchShortProps> = (props) => {
               style={{
                 flex: Math.max(0.1, shotEndSeconds(shot) - shotStartSeconds(shot)),
                 height: index === activeIndex ? 7 : 3,
-                borderRadius: 999,
                 backgroundColor:
                   index === activeIndex ? accent : "rgba(255,255,255,0.26)",
-                boxShadow: index === activeIndex ? `0 0 14px ${accent}77` : "none",
               }}
             />
           ))}
@@ -739,9 +682,6 @@ export const CleanShort: React.FC<CleanShortProps> = (props) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const source = resolveShortPatternSource(props);
-  const mood = resolveMood(props.mood);
-  const accent =
-    optionalString(props.captionHighlightColor) || PATTERN_ACCENTS[mood];
   const sourceAspectRatio = resolveShortPatternAspectRatio(props.sourceAspectRatio);
   const entranceFrame = Math.max(1, Math.round(fps * 0.3));
   const entrance = interpolate(frame, [0, entranceFrame], [0.985, 1], {
@@ -751,7 +691,7 @@ export const CleanShort: React.FC<CleanShortProps> = (props) => {
   const frameTop = clamp(finiteOr(props.frameTopPx, 390), 340, 700);
 
   return (
-    <PatternShell props={props} captionBottomPx={610} captionFontSize={48}>
+    <PatternShell props={props} captionBottomPx={610} captionFontSize={60}>
       <div
         data-clean-native-frame="true"
         style={{
@@ -771,24 +711,10 @@ export const CleanShort: React.FC<CleanShortProps> = (props) => {
           sourceAspectRatio={sourceAspectRatio}
           panelAspectRatio={944 / 531}
           label={optionalString(props.frameLabel) || "FULL CONTEXT"}
-          accent={accent}
-          radius={26}
+          framed
         />
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          zIndex: 2,
-          top: frameTop - 42,
-          left: 64,
-          width: 82,
-          height: 4,
-          borderRadius: 999,
-          backgroundColor: accent,
-          boxShadow: `0 0 18px ${accent}66`,
-        }}
-      />
       <div
         style={{
           position: "absolute",
